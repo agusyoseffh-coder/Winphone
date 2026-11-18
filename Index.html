@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>WinPhone</title>
+<style>
+:root{--win:#f6f6f6;--ink:#1a1a1a;--bar:#dfe7f3;--btn:#e4e7ec;--acc:#0a64d6;--tk:#0e121af0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--win:#242a33;--ink:#eee;--bar:#303846;--btn:#38414f}}
+:root[data-theme="dark"]{--win:#242a33;--ink:#eee;--bar:#303846;--btn:#38414f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:system-ui,"Segoe UI",sans-serif}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:var(--ink);touch-action:manipulation}
+#desk{position:absolute;inset:0 0 46px 0;background:linear-gradient(135deg,#0b3d91,#1fa2ff);overflow:hidden}
+#icons{display:flex;flex-direction:column;flex-wrap:wrap;gap:6px;height:100%;padding:10px;align-content:flex-start}
+.ic{width:72px;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 3px #000;padding:6px 2px;border-radius:8px}
+.ic b{display:block;font-size:30px;font-weight:400}
+.ic:active{background:#fff3}
+.win{position:absolute;background:var(--win);color:var(--ink);border-radius:10px;box-shadow:0 8px 30px #0008;display:flex;flex-direction:column;overflow:hidden;border:1px solid #0003}
+.win.max{left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0}
+.win.hid{display:none}
+.tb{display:flex;align-items:center;gap:6px;background:var(--bar);padding:4px 4px 4px 10px;touch-action:none;font-size:13px}
+.tb span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb button{width:32px;height:28px;border:0;border-radius:6px;background:transparent;color:inherit;font-size:14px}
+.tb button.x:active{background:#e81123;color:#fff}
+.bd{flex:1;overflow:auto;padding:8px;min-height:0}
+button,textarea{font:inherit;color:inherit}
+.g button{padding:12px 0;border:0;border-radius:8px;background:var(--btn);font-size:16px}
+.g{display:grid;gap:6px}
+#tk{position:absolute;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);height:46px;background:var(--tk);display:flex;align-items:center;gap:4px;padding:0 6px;color:#fff}
+#tk button{height:38px;min-width:38px;border:0;border-radius:6px;background:transparent;color:#fff;font-size:20px}
+#tk button.on{background:#fff2;border-bottom:2px solid #5ab0ff}
+#tasks{flex:1;display:flex;gap:4px;overflow-x:auto}
+#clk{font-size:11px;text-align:right;line-height:1.2;padding:0 4px}
+#start{position:absolute;left:6px;bottom:52px;width:min(300px,92vw);background:var(--tk);backdrop-filter:blur(12px);border-radius:12px;padding:12px;color:#fff;display:none;box-shadow:0 8px 30px #000a}
+#start.show{display:block}
+#start .g{grid-template-columns:repeat(3,1fr)}
+#start .g button{background:#ffffff14;color:#fff;font-size:12px;padding:10px 2px}
+#start .g button b{display:block;font-size:26px;font-weight:400}
+#start .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11px;opacity:.8}
+#start .foot button{background:#ffffff1f;border:0;color:#fff;border-radius:6px;padding:8px 10px}
+#start .g{max-height:52vh;overflow:auto}
+.big{display:block;width:100%;margin:6px 0;padding:12px;border:0;border-radius:8px;background:var(--btn);color:var(--ink);text-align:left;font-size:14px}
+.big small{display:block;opacity:.7;font-size:11px;margin-top:2px}
+.sec{font-size:12px;opacity:.7;margin:10px 0 2px}
+.mn{display:grid;grid-template-columns:repeat(8,1fr);gap:2px}
+.mn button{aspect-ratio:1;border:0;border-radius:3px;background:var(--btn);font-size:13px;padding:0}
+.mn button.o{background:transparent;border:1px solid #8884}
+</style></head><body>
+<div id="desk"><div id="icons"></div></div>
+<div id="start"><div class="g" id="sg"></div>
+<div class="foot"><span>Simulasi tampilan Windows</span><button id="rs">⟳ Mulai ulang</button></div></div>
+<div id="tk"><button id="sb">🪟</button><div id="tasks"></div><div id="clk"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const ST={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const WP=['linear-gradient(135deg,#0b3d91,#1fa2ff)','linear-gradient(135deg,#232526,#414345)','linear-gradient(135deg,#7f00ff,#e100ff)','linear-gradient(135deg,#134e5e,#71b280)'];
+function applyWp(){$('#desk').style.background=WP[+ST.get('wp',0)]||WP[0]}
+function applyTheme(){const t=ST.get('theme','');if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme}
+applyWp();applyTheme();
+const wins={};let zi=10,cas=0;
+
+const APPS={
+ notepad:{t:'Notepad',i:'📝',w:320,h:300,mk:notepad},
+ calc:{t:'Kalkulator',i:'🧮',w:260,h:380,mk:calc},
+ mine:{t:'Minesweeper',i:'💣',w:300,h:400,mk:mine},
+ snake:{t:'Snake',i:'🐍',w:290,h:430,mk:snake},
+ set:{t:'Pengaturan',i:'⚙️',w:300,h:290,mk:settings},
+ games:{t:'Pusat Game',i:'🎮',w:310,h:470,mk:games},
+ steam:{t:'Steam',i:'♨️',w:310,h:390,mk:steam},
+ paint:{t:'Paint',i:'🎨',w:300,h:430,mk:paint},
+ files:{t:'Explorer',i:'🗂️',w:310,h:390,mk:files},
+ task:{t:'Task Manager',i:'📊',w:300,h:340,mk:task}
+};
+for(const k in APPS){
+ const a=APPS[k];
+ const ic=document.createElement('div');ic.className='ic';ic.innerHTML='<b>'+a.i+'</b>'+a.t;ic.onclick=()=>open(k);$('#icons').appendChild(ic);
+ const sb=document.createElement('button');sb.innerHTML='<b>'+a.i+'</b>'+a.t;sb.onclick=()=>{open(k);$('#start').classList.remove('show')};$('#sg').appendChild(sb);
+}
+$('#sb').onclick=e=>{e.stopPropagation();$('#start').classList.toggle('show')};
+$('#desk').addEventListener('pointerdown',()=>$('#start').classList.remove('show'));
+$('#rs').onclick=()=>location.reload();
+
+function open(k){
+ if(wins[k]){show(k);return}
+ const a=APPS[k],w=document.createElement('div');w.className='win';
+ const W=Math.min(a.w,innerWidth-16),H=Math.min(a.h,innerHeight-100);
+ w.style.cssText=`width:${W}px;height:${H}px;left:${8+(cas%5)*18}px;top:${8+(cas%5)*22}px`;cas++;
+ w.innerHTML=`<div class="tb"><span>${a.i} ${a.t}</span><button class="mi">—</button><button class="mx">▢</button><button class="x">✕</button></div><div class="bd"></div>`;
+ $('#desk').appendChild(w);
+ const tbn=document.createElement('button');tbn.textContent=a.i;tbn.onclick=()=>{const o=wins[k];if(o.el.classList.contains('hid')||o.el.style.zIndex!=zi)show(k);else hide(k)};
+ $('#tasks').appendChild(tbn);
+ const off=a.mk(w.querySelector('.bd'));
+ wins[k]={el:w,tb:tbn,off};
+ w.addEventListener('pointerdown',()=>focus(k),true);
+ w.querySelector('.mi').onclick=()=>hide(k);
+ w.querySelector('.mx').onclick=()=>w.classList.toggle('max');
+ w.querySelector('.x').onclick=()=>close(k);
+ drag(w,w.querySelector('.tb'));
+ show(k);
+}
+function focus(k){const o=wins[k];o.el.style.zIndex=++zi;for(const j in wins)wins[j].tb.classList.toggle('on',j===k&&!wins[j].el.classList.contains('hid'))}
+function show(k){wins[k].el.classList.remove('hid');focus(k)}
+function hide(k){wins[k].el.classList.add('hid');wins[k].tb.classList.remove('on')}
+function close(k){const o=wins[k];o.off&&o.off();o.el.remove();o.tb.remove();delete wins[k]}
+function drag(w,h){let sx,sy,ox,oy,on=0;
+ h.addEventListener('pointerdown',e=>{if(e.target.closest('button')||w.classList.contains('max'))return;on=1;sx=e.clientX;sy=e.clientY;ox=w.offsetLeft;oy=w.offsetTop;h.setPointerCapture(e.pointerId)});
+ h.addEventListener('pointermove',e=>{if(!on)return;w.style.left=Math.max(-w.offsetWidth+60,Math.min(innerWidth-60,ox+e.clientX-sx))+'px';w.style.top=Math.max(0,Math.min(innerHeight-120,oy+e.clientY-sy))+'px'});
+ h.addEventListener('pointerup',()=>on=0);h.addEventListener('pointercancel',()=>on=0)}
+
+function notepad(b){
+ b.style.padding='0';
+ b.innerHTML='<textarea style="width:100%;height:100%;border:0;padding:10px;background:transparent;resize:none;outline:0" placeholder="Ketik di sini… (tersimpan otomatis)"></textarea>';
+ const t=b.firstChild;t.value=ST.get('note','');t.oninput=()=>ST.set('note',t.value);
+}
+function calc(b){
+ b.innerHTML='<div class="out" style="text-align:right;font-size:28px;padding:8px 4px;min-height:48px;word-break:break-all">0</div><div class="g" style="grid-template-columns:repeat(4,1fr)"></div>';
+ const o=b.querySelector('.out'),g=b.querySelector('.g');let s='';
+ ['C','⌫','(',')','7','8','9','÷','4','5','6','×','1','2','3','−','0','.','=','+'].forEach(c=>{
+  const x=document.createElement('button');x.textContent=c;
+  x.onclick=()=>{
+   if(c==='C')s='';else if(c==='⌫')s=s.slice(0,-1);
+   else if(c==='='){try{const e=s.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-');if(/^[0-9+\-*/.() ]+$/.test(e)){const r=Function('"use strict";return ('+e+')')();s=String(Math.round(r*1e10)/1e10)}}catch(er){s='Error'}}
+   else{if(s==='Error')s='';s+=c}
+   o.textContent=s||'0'};
+  g.appendChild(x)});
+}
+function mine(b){
+ const N=8,M=10;let cs,flag,over,first,left;
+ b.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><button class="fl" style="padding:8px 12px;border:0;border-radius:8px;background:var(--btn)">⛏ Gali</button><span class="msg">Ketuk kotak</span><button class="nw" style="padding:8px 12px;border:0;border-radius:8px;background:var(--btn)">↻</button></div><div class="mn"></div>';
+ const bd=b.querySelector('.mn'),msg=b.querySelector('.msg'),fl=b.querySelector('.fl');
+ function init(){cs=Array.from({length:N*N},()=>({m:0,o:0,f:0,n:0}));flag=false;over=false;first=true;left=N*N-M;fl.textContent='⛏ Gali';msg.textContent='Ketuk kotak';draw()}
+ const nb=i=>{const r=i/N|0,c=i%N,o=[];for(let a=-1;a<=1;a++)for(let d=-1;d<=1;d++){if(!a&&!d)continue;const y=r+a,x=c+d;if(y>=0&&y<N&&x>=0&&x<N)o.push(y*N+x)}return o};
+ function place(s){let p=0;while(p<M){const i=Math.random()*N*N|0;if(i===s||cs[i].m)continue;cs[i].m=1;p++}cs.forEach((c,i)=>c.n=nb(i).filter(j=>cs[j].m).length)}
+ function reveal(i){const c=cs[i];if(c.o||c.f)return;c.o=1;left--;if(!c.n&&!c.m)nb(i).forEach(reveal)}
+ function draw(){bd.innerHTML=cs.map((c,i)=>`<button data-i="${i}" class="${c.o?'o':''}">${c.o?(c.m?'💥':c.n||''):c.f?'🚩':''}</button>`).join('')}
+ bd.onclick=e=>{const t=e.target.closest('button');if(!t||over)return;const i=+t.dataset.i,c=cs[i];
+  if(flag){if(!c.o)c.f^=1}
+  else{if(c.f)return;if(first){place(i);first=false}
+   if(c.m){over=true;cs.forEach(x=>{if(x.m)x.o=1});msg.textContent='Kalah!'}
+   else{reveal(i);if(left===0){over=true;msg.textContent='Menang! 🎉'}}}
+  draw()};
+ fl.onclick=()=>{flag=!flag;fl.textContent=flag?'🚩 Bendera':'⛏ Gali'};
+ b.querySelector('.nw').onclick=init;init();
+}
+function snake(b){
+ const N=15,S=16;
+ b.innerHTML='<canvas width="240" height="240" style="width:100%;background:#111;border-radius:6px;display:block"></canvas><div class="sc" style="margin:6px 0;font-size:13px">Skor 0</div><div class="g" style="grid-template-columns:repeat(3,1fr);max-width:200px;margin:auto"><i></i><button data-d="0,-1">▲</button><button class="rs">↻</button><button data-d="-1,0">◀</button><button data-d="0,1">▼</button><button data-d="1,0">▶</button></div>';
+ const g=b.querySelector('canvas').getContext('2d'),lab=b.querySelector('.sc');
+ let s,d,nd,f,sc,dead,tm;
+ function init(){s=[{x:7,y:7}];d=nd={x:1,y:0};f={x:3,y:3};sc=0;dead=false;lab.textContent='Skor 0';draw()}
+ function step(){if(dead)return;d=nd;const h={x:(s[0].x+d.x+N)%N,y:(s[0].y+d.y+N)%N};
+  if(s.some(p=>p.x===h.x&&p.y===h.y)){dead=true;lab.textContent='Game over, skor '+sc+'. Ketuk ↻';return}
+  s.unshift(h);
+  if(h.x===f.x&&h.y===f.y){sc++;lab.textContent='Skor '+sc;do{f={x:Math.random()*N|0,y:Math.random()*N|0}}while(s.some(p=>p.x===f.x&&p.y===f.y))}else s.pop();
+  draw()}
+ function draw(){g.fillStyle='#111';g.fillRect(0,0,240,240);g.fillStyle='#ff5252';g.fillRect(f.x*S+1,f.y*S+1,S-2,S-2);g.fillStyle='#4cd964';s.forEach(p=>g.fillRect(p.x*S+1,p.y*S+1,S-2,S-2))}
+ b.querySelectorAll('[data-d]').forEach(x=>x.onclick=()=>{const[a,c]=x.dataset.d.split(',').map(Number);if(s.length===1||(a!==-d.x||c!==-d.y))nd={x:a,y:c}});
+ b.querySelector('.rs').onclick=init;
+ init();tm=setInterval(step,150);return()=>clearInterval(tm);
+}
+function settings(b){
+ b.innerHTML='<p style="margin:0 0 6px;font-size:13px">Wallpaper</p><div style="display:flex;gap:8px;margin-bottom:12px"></div><p style="margin:0 0 6px;font-size:13px">Tema jendela</p><div class="th" style="display:flex;gap:8px;margin-bottom:12px"></div><p style="font-size:12px;opacity:.75;margin:0">WinPhone adalah simulasi tampilan Windows di browser. Untuk .exe PC, gunakan Pusat Game (Winlator, Steam Link, atau cloud gaming).</p>';
+ const w=b.children[1];
+ WP.forEach((g,i)=>{const x=document.createElement('button');x.style.cssText=`width:48px;height:36px;border-radius:8px;border:2px solid #8886;background:${g}`;x.onclick=()=>{ST.set('wp',i);applyWp()};w.appendChild(x)});
+ [['Otomatis',''],['Terang','light'],['Gelap','dark']].forEach(([l,v])=>{const x=document.createElement('button');x.textContent=l;x.style.cssText='padding:8px 12px;border:0;border-radius:8px;background:var(--btn)';x.onclick=()=>{ST.set('theme',v);applyTheme()};b.querySelector('.th').appendChild(x)});
+}
+function launch(pkg,url){try{if(window.Android){if(pkg)Android.openApp(pkg,url);else Android.openUrl(url);return}}catch(e){}window.open(url,'_blank')}
+function btn(b,ic,t,s,fn){const x=document.createElement('button');x.className='big';x.innerHTML=ic+' '+t+(s?'<small>'+s+'</small>':'');x.onclick=fn;b.appendChild(x)}
+function sec(b,t){const d=document.createElement('div');d.className='sec';d.textContent=t;b.appendChild(d)}
+function games(b){
+ sec(b,'Game di dalam WinPhone');
+ btn(b,'🐍','Snake','Langsung main',()=>open('snake'));
+ btn(b,'💣','Minesweeper','Langsung main',()=>open('mine'));
+ sec(b,'Game PC lewat cloud (tanpa PC, butuh internet stabil)');
+ btn(b,'🟢','GeForce NOW','Main game Steam dari server; ada paket gratis terbatas',()=>launch('','https://play.geforcenow.com'));
+ btn(b,'🎮','Xbox Cloud Gaming','Umumnya perlu langganan Game Pass',()=>launch('','https://www.xbox.com/play'));
+ sec(b,'Jalankan .exe langsung di HP (perlu HP kuat)');
+ btn(b,'🍷','Winlator','Membuka Winlator jika sudah terpasang, jika belum menuju halaman unduhnya',()=>launch('com.winlator','https://github.com/brunodev85/winlator/releases'));
+ btn(b,'♨️','Steam','Steam Link, toko, dan komunitas',()=>open('steam'));
+}
+function steam(b){
+ b.innerHTML='<div style="background:#171a21;color:#c7d5e0;margin:-8px;padding:14px;min-height:calc(100% + 16px)"><div style="font-size:20px;font-weight:700;letter-spacing:2px;margin-bottom:8px">STEAM</div><div class="sb"></div><p style="font-size:11px;opacity:.7">Steam asli tidak bisa berjalan di HP tanpa emulator. Steam Link menampilkan game dari PC Anda lewat Wi-Fi; toko dan komunitas dibuka di browser.</p></div>';
+ const c=b.querySelector('.sb');
+ btn(c,'📡','Steam Link','Mainkan game dari PC Steam lewat Wi-Fi',()=>launch('com.valvesoftware.steamlink','https://play.google.com/store/apps/details?id=com.valvesoftware.steamlink'));
+ btn(c,'🛒','Toko Steam','',()=>launch('','https://store.steampowered.com'));
+ btn(c,'👥','Komunitas','',()=>launch('','https://steamcommunity.com'));
+}
+function paint(b){
+ b.style.padding='6px';
+ b.innerHTML='<canvas width="300" height="300" style="width:100%;background:#fff;border-radius:6px;touch-action:none;display:block"></canvas><div class="pc" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center"></div>';
+ const cv=b.querySelector('canvas'),g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,300,300);g.lineCap='round';g.lineJoin='round';
+ let col='#000',sz=4,on=0;
+ const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*300/r.width,(e.clientY-r.top)*300/r.height]};
+ cv.onpointerdown=e=>{on=1;cv.setPointerCapture(e.pointerId);const[x,y]=pos(e);g.strokeStyle=col;g.lineWidth=sz;g.beginPath();g.moveTo(x,y);g.lineTo(x+.1,y);g.stroke()};
+ cv.onpointermove=e=>{if(!on)return;const[x,y]=pos(e);g.lineTo(x,y);g.stroke()};
+ cv.onpointerup=cv.onpointercancel=()=>on=0;
+ const P=b.querySelector('.pc');
+ ['#000000','#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#8e24aa','#ffffff'].forEach(c=>{const x=document.createElement('button');x.style.cssText='width:28px;height:28px;border-radius:50%;border:2px solid #8886;background:'+c;x.onclick=()=>col=c;P.appendChild(x)});
+ const s=document.createElement('input');s.type='range';s.min=1;s.max=24;s.value=sz;s.oninput=()=>sz=+s.value;s.style.flex='1';P.appendChild(s);
+ const cl=document.createElement('button');cl.textContent='🗑';cl.onclick=()=>{g.fillStyle='#fff';g.fillRect(0,0,300,300)};cl.style.cssText='padding:6px 10px;border:0;border-radius:8px;background:var(--btn)';P.appendChild(cl);
+}
+function files(b){
+ const T={'Dokumen':{'catatan.txt':'note'},'Unduhan':{},'Game':{'Snake.exe':'snake','Minesweeper.exe':'mine'},'Gambar':{}};
+ let path=null;
+ function render(){
+  b.innerHTML='<div style="font-size:12px;margin-bottom:6px">💻 Komputer ini › Disk Lokal (C:)'+(path?' › '+path:'')+'</div>';
+  if(path)btn(b,'⬆️','..','',()=>{path=null;render()});
+  const items=path?T[path]:T;
+  for(const k in items){const v=items[k];
+   if(path)btn(b,k.endsWith('.txt')?'📄':'⚙️',k,'',()=>open(v==='note'?'notepad':v));
+   else btn(b,'📁',k,Object.keys(v).length+' item',()=>{path=k;render()})}
+  if(path&&!Object.keys(items).length){const d=document.createElement('div');d.textContent='Folder kosong';d.style.opacity='.6';b.appendChild(d)}
+ }
+ render();
+}
+function task(b){
+ function r(){b.innerHTML='';sec(b,'Aplikasi yang berjalan');let n=0;
+  Object.keys(wins).forEach(k=>{if(k==='task')return;n++;btn(b,APPS[k].i,APPS[k].t,'Ketuk untuk menutup',()=>{close(k);r()})});
+  if(!n){const d=document.createElement('div');d.textContent='Tidak ada aplikasi lain';d.style.opacity='.6';b.appendChild(d)}}
+ r();const t=setInterval(r,4000);return()=>clearInterval(t);
+}
+function clock(){const d=new Date();$('#clk').innerHTML=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+'<br>'+d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
+clock();setInterval(clock,20000);
+</script></body></html>
